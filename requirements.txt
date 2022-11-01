@@ -1,0 +1,5 @@
+beautifulsoup4
+datetime
+requests
+path
+log21

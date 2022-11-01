@@ -140,9 +140,11 @@ def downloadVideo():
             response = requests.get(videoProp[key]['href'])
         except requests.exceptions.RequestException as e:
             log21.error(e)
+            log21.debug('request to url error: ',int(key+1),'/',len(videoProp.keys()))
             continue
         if response.status_code != 200:
             log21.error('site',videoProp[key]['href'],' is not available')
+            log21.debug('request to url error: ',response.status_code,int(key+1),'/',len(videoProp.keys()))
             continue
         log21.debug('site '+videoProp[key]['href']+' is 200OK')
         
@@ -160,6 +162,7 @@ def downloadVideo():
         log21.debug('video src for 480p',videoProp[key]['downloadurl480'])
         if videoProp[key]['downloadurl480'] == None:
             log21.warning('cannot get video source for',videoProp[key]['href'])
+            log21.debug('cannot get video source: ',int(key+1),'/',len(videoProp.keys()))
             continue   
         log21.info('do download video for ',videoProp[key]['id'],videoProp[key]['downloadurl480'])
         try:
@@ -168,6 +171,7 @@ def downloadVideo():
                     shutil.copyfileobj(r.raw, f)
         except requests.exceptions.RequestException as e:
             log21.error(e)
+            log21.debug('request to url error: ',int(key+1),'/',len(videoProp.keys()))
             continue
         
         # download 720p and 1080p

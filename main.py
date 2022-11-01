@@ -56,6 +56,8 @@ def startProcess():
     # download cover image
     downloadCoverImage()
 
+    log21.info('success..')
+
     exit()
 
 def downloadCoverImage():
@@ -190,7 +192,7 @@ def downloadVideo():
                 except requests.exceptions.RequestException as e:
                     log21.error(e)
             else:
-                log21.info('no video files in 720p resolution')
+                log21.info('no video files in 720p resolution for',videoProp[key]['id'])
 
             # 1080p
             p1080 = re.compile(r"video_alt_url2:\s*'((http|https)://85tube.com/get_file/[a-z0-9\/\_\.\?]+=[0-9]+)',")      
@@ -211,19 +213,18 @@ def downloadVideo():
                 except requests.exceptions.RequestException as e:
                     log21.error(e)
             else:
-                log21.info('no video files in 1080p resolution')
+                log21.info('no video files in 1080p resolution for',videoProp[key]['id'])
         else:
-            log21.info('no video files HD resolution')
+            log21.info('no video files HD resolution for',videoProp[key]['id'])
 
     return True
 
 def getAllLinkPropertiesOnLatestPage():
     log21.debug('get all link on latest-update page')
-    #TODO
     pageRandom = random.randint(1,int(allPageCount))
     log21.debug('page random for get video:',pageRandom)
-    #urlReg = siteUrl+'/'+siteUrlLastedUpdate+'/'+pageRandom+'/'
-    urlReg = siteUrl+'/'+siteUrlLastedUpdate+'/'
+    urlReg = siteUrl+'/'+siteUrlLastedUpdate+'/'+str(pageRandom)+'/'
+    log21.info('get all video on random page',urlReg)
     try:
         response = requests.get(urlReg)
     except requests.exceptions.RequestException as e:
@@ -257,7 +258,7 @@ def getAllLinkPropertiesOnLatestPage():
             "image:",videoProp[index]['image'],"\n"
             "videopreview:",videoProp[index]['videopreview'],"\n"
             "hd:",videoProp[index]['hd'],"\n"
-            "duration:",videoProp[index]['duration'],"\n"
+            "duration:",videoProp[index]['duration']
         )
     return videoProp
 

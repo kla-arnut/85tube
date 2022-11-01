@@ -56,12 +56,12 @@ def startProcess():
     # download cover image
     downloadCoverImage()
 
-    log21.info('success..')
+    log21.info('all completed..')
 
     exit()
 
 def downloadCoverImage():
-    log21.debug('download video preview')
+    log21.debug('download cover image')
     for key in videoProp.keys():
         videoProp[key]['videoimagepath'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'_image.jpg')
         log21.info('do download video cover image for ',videoProp[key]['id'],videoProp[key]['image'])
@@ -71,6 +71,7 @@ def downloadCoverImage():
                     shutil.copyfileobj(r.raw, f)
         except requests.exceptions.RequestException as e:
             log21.error(e)
+        log21.debug('download cover image success: ',key,'/',len(videoProp.keys()))
 
     return True
 
@@ -85,6 +86,7 @@ def downloadVideoPreview():
                     shutil.copyfileobj(r.raw, f)
         except requests.exceptions.RequestException as e:
             log21.error(e)
+        log21.debug('download video preview success: ',key,'/',len(videoProp.keys()))
                 
     return True
 
@@ -216,6 +218,7 @@ def downloadVideo():
                 log21.info('no video files in 1080p resolution for',videoProp[key]['id'])
         else:
             log21.info('no video files HD resolution for',videoProp[key]['id'])
+        log21.debug('download videos success: ',key,'/',len(videoProp.keys()))
 
     return True
 
@@ -260,6 +263,7 @@ def getAllLinkPropertiesOnLatestPage():
             "hd:",videoProp[index]['hd'],"\n"
             "duration:",videoProp[index]['duration']
         )
+    log21.debug('number of video(s):',len(videoProp.keys()),)
     return videoProp
 
 def siteIsAvailable():

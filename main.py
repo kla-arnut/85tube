@@ -1,8 +1,7 @@
-from inspect import isframe
+#from inspect import isframe
 import os
-from xmlrpc.client import FastMarshaller
+#from xmlrpc.client import FastMarshaller
 import requests
-import datetime
 from bs4 import BeautifulSoup as bs
 from os import path
 import log21
@@ -71,7 +70,7 @@ def downloadCoverImage():
                     shutil.copyfileobj(r.raw, f)
         except requests.exceptions.RequestException as e:
             log21.error(e)
-        log21.debug('download cover image success: ',key,'/',len(videoProp.keys()))
+        log21.debug('download cover image success: ',int(key+1),'/',len(videoProp.keys()))
 
     return True
 
@@ -86,7 +85,7 @@ def downloadVideoPreview():
                     shutil.copyfileobj(r.raw, f)
         except requests.exceptions.RequestException as e:
             log21.error(e)
-        log21.debug('download video preview success: ',key,'/',len(videoProp.keys()))
+        log21.debug('download video preview success: ',int(key+1),'/',len(videoProp.keys()))
                 
     return True
 
@@ -218,7 +217,7 @@ def downloadVideo():
                 log21.info('no video files in 1080p resolution for',videoProp[key]['id'])
         else:
             log21.info('no video files HD resolution for',videoProp[key]['id'])
-        log21.debug('download videos success: ',key,'/',len(videoProp.keys()))
+        log21.debug('download videos success: ',int(key+1),'/',len(videoProp.keys()))
 
     return True
 

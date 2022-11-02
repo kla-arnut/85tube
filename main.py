@@ -10,6 +10,7 @@ import configparser
 from collections import defaultdict
 import re
 import random
+from pathlib import Path
 
 # set log level
 log21.basicConfig(level=log21.DEBUG)
@@ -31,6 +32,12 @@ videosPath = os.path.join(os.getcwd(), r'videos')
 videoProp = defaultdict(dict)
 
 def startProcess():
+    # check lock file if this script is running
+    checkLockFile()
+
+    # create lock file
+    createLockFile()
+    
     # create path
     createVideoPath()
 
@@ -55,9 +62,30 @@ def startProcess():
     # download cover image
     downloadCoverImage()
 
+    # clear lock file
+    removeLockFile()
+
     log21.info('all completed..')
 
     exit()
+
+def checkLockFile():
+    log21.debug('check lock file')
+    if os.path.exists(os.path.join(os.getcwd(), r'inprogress.lock')):
+        log21.info('this script is running, can run again after this task is finished')
+        exit()
+
+def createLockFile():
+    log21.debug('create lock file')
+    if not os.path.exists(os.path.join(os.getcwd(), r'inprogress.lock')):
+        Path(os.path.join(os.getcwd(), r'inprogress.lock')).touch()
+    return True
+
+def removeLockFile():
+    log21.debug('remove lock file')
+    if os.path.exists(os.path.join(os.getcwd(), r'inprogress.lock')):
+        Path(os.path.join(os.getcwd(), r'inprogress.lock')).unlink()
+    return True
 
 def downloadCoverImage():
     log21.debug('download cover image')

@@ -11,6 +11,7 @@ from collections import defaultdict
 import re
 import random
 from pathlib import Path
+import json
 
 # set log level
 log21.basicConfig(level=log21.DEBUG)
@@ -30,8 +31,15 @@ siteUrlLastedUpdate = config['DEFAULT']['siteUrlLastedUpdate']
 allPageCount = config['DEFAULT']['allPageCount']
 videosPath = os.path.join(os.getcwd(), r'videos')
 videoProp = defaultdict(dict)
+apiUrl = config['DEFAULT']['apiUrl']
+apiGetServerList = config['DEFAULT']['apiGetServerList']
+apiVideoUpdate =  config['DEFAULT']['apiVideoUpdate']
+apiGetCategory = config['DEFAULT']['apiGetCategory']
+apiCategoriesIDDefault = config['DEFAULT']['apiCategoriesIDDefault']
+serverCode = 'global'
 
 def startProcess():
+    
     # check lock file if this script is running
     checkLockFile()
 
@@ -62,12 +70,95 @@ def startProcess():
     # download cover image
     downloadCoverImage()
 
+    # get server code()
+    getServerCode()
+
+    # map categories
+    mappingCategories()
+
+    # api call register
+    apiCall()
+
     # clear lock file
     removeLockFile()
 
     log21.info('all completed..')
 
     exit()
+
+def mappingCategories():
+    log21.debug('mapping categories')
+    try:
+        response = requests.post(apiUrl+'/'+apiGetCategory)
+    except requests.exceptions.RequestException as e:
+        log21.error(e)
+        log21.debug('request to url error: ',apiUrl+'/'+apiGetCategory)
+    if response.status_code != 200:
+        log21.error('site',apiUrl+'/'+apiGetCategory,' is not available')
+        log21.debug('request to url error: ',response.status_code)
+    log21.debug('site',apiUrl,'/',apiGetCategory,' is 200OK')
+    response = response.json()
+    if response['success'] == True:
+        listCat = response['result']
+        log21.info('list all categories get from api service is:',[category['title'] for category in listCat])
+    for key in videoProp.keys():
+        videoProp[key]['categoriesid'] = apiCategoriesIDDefault # default other
+        log21.info('default categories id for',videoProp[key]['id'],'is 其他 (',videoProp[key]['categoriesid'],')')
+        breaker = False
+        for cat in videoProp[key]['categories']:
+            for apiCat in listCat:
+                if cat == apiCat['title']:
+                    videoProp[key]['categoriesid'] = str(apiCat['id'])
+                    log21.info('new match categories id for',videoProp[key]['id'],'is',apiCat['title'],'(',videoProp[key]['categoriesid'],')')
+                    breaker = True
+                    break
+            if breaker == True:
+                break
+    return True
+
+def getServerCode():
+    log21.debug('get server code from api')
+    try:
+        response = requests.post(apiUrl+'/'+apiGetServerList)
+    except requests.exceptions.RequestException as e:
+        log21.error(e)
+        log21.debug('request to url error: ',apiUrl+'/'+apiGetServerList)
+        return True
+    if response.status_code != 200:
+        log21.error('site',apiUrl+'/'+apiGetServerList,' is not available')
+        log21.debug('request to url error: ',response.status_code)
+        return True
+    log21.debug('site',apiUrl,'/',apiGetServerList,' is 200OK')
+    response = response.json()
+    if response['success'] == True:
+        serverCode = response['result'][0]['serverCode']
+        log21.info('api response servercode is:',serverCode)
+    return True
+
+def apiCall():
+    log21.debug('api call for register new videos')
+    for key in videoProp.keys():
+        videoUpdate = { 'id': str(videoProp[key]['id']), 
+                        'title': str(videoProp[key]['title']), 
+                        'imgUrl': str(videoProp[key]['videoimagepath']), 
+                        'videoUrl': str(videoProp[key]['videofilepathsendapi']), 
+                        'demoUrl': str(videoProp[key]['videofilepreviewpath']), 
+                        'serverCode': str(serverCode), 
+                        'videoType': str(2), # 2 is mp4, 1 is m3u8
+                        'categoryId': str(videoProp[key]['categoriesid']), 
+                        'tagIds': str(videoProp[key]['tags']), 
+                        'playTime': str(videoProp[key]['duration'])}
+        try:
+            log21.info('request update api to',apiUrl,'for',videoProp[key]['id'])
+            response = requests.post(apiUrl,data=json.dumps(videoUpdate), headers={'Content-Type': 'application/json;charset-UTF-8'})
+        except requests.exceptions.RequestException as e:
+            log21.error(e)
+            continue
+        if response.status_code != 200:
+            log21.info('request to url error: ',response.status_code,int(key+1),'/',len(videoProp.keys()))
+            continue
+        log21.info(response.text)
+    return True
 
 def checkLockFile():
     log21.debug('check lock file')
@@ -125,6 +216,7 @@ def checkVideoIsExists():
             videoProp.pop(key, None)
     if len(videoProp) == 0:
         log21.info('no video files to download')
+        removeLockFile()
         exit()
 
     return True
@@ -135,8 +227,13 @@ def checkVideoComponent():
         if videoProp[key]['id'] == None or videoProp[key]['href'] == None or videoProp[key]['title'] == None or videoProp[key]['image'] == None:
             videoProp.pop(key, None)
             log21.warning('video' + key + 'incomplete components')
+        # # debug test for fast 3 videos download
+        # if int(key) > int(2):
+        #     videoProp.pop(key, None)
+        # # end debug
     if len(videoProp) == 0:
         log21.info('no video files to download')
+        removeLockFile()
         exit()
         
     return True
@@ -178,29 +275,24 @@ def downloadVideo():
         
         soup = bs(response.text, 'html.parser')
 
-        # download 480p default
-        p480 = re.compile(r"video_url:\s*'((http|https)://85tube.com/get_file/[a-z0-9\/\_\.\?]+=[0-9]+)',")
+        # get video tag
+        tags = soup.find("meta", attrs={'name': 'keywords'})
+        videoProp[key]['tags'] = ''
+        if tags['content']:
+            videoProp[key]['tags'] = tags['content'].replace(" ", "")
+        log21.debug('video tags:',videoProp[key]['tags'])
+
+        # get video categories
+        videoProp[key]['categories'] = ['其他'] #อื่นๆ
+        match = re.compile(r"video_categories:\s*'(.*?)',")
         for script in soup.find_all("script", {"src":False}):
             if script:            
-                m480 = p480.search(script.string)
-                if m480 != None:
-                    videoProp[key]['downloadurl480'] = m480.group(1)
-                    videoProp[key]['videofilepath480'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'.mp4')
+                cat = match.search(script.string)
+                if cat != None:
+                    category = cat.group(1)
+                    videoProp[key]['categories'] = category.replace(" ", "").split(",")
                     break
-        log21.debug('video src for 480p',videoProp[key]['downloadurl480'])
-        if videoProp[key]['downloadurl480'] == None:
-            log21.warning('cannot get video source for',videoProp[key]['href'])
-            log21.debug('cannot get video source: ',int(key+1),'/',len(videoProp.keys()))
-            continue   
-        log21.info('do download video for ',videoProp[key]['id'],videoProp[key]['downloadurl480'])
-        try:
-            with requests.get(videoProp[key]['downloadurl480'], stream=True) as r:
-                with open(videoProp[key]['videofilepath480'], 'wb') as f:
-                    shutil.copyfileobj(r.raw, f)
-        except requests.exceptions.RequestException as e:
-            log21.error(e)
-            log21.debug('request to url error: ',int(key+1),'/',len(videoProp.keys()))
-            continue
+        log21.debug('video categories:',videoProp[key]['tags'])
         
         # download 720p and 1080p
         if videoProp[key]['hd'] == True:
@@ -214,6 +306,7 @@ def downloadVideo():
                     if m720 != None:
                         videoProp[key]['downloadurl720'] = m720.group(1)
                         videoProp[key]['videofilepath720'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'_720p.mp4')
+                        videoProp[key]['videofilepathsendapi'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'_720p.mp4')
                         break
             if 'downloadurl720' in videoProp[key] and videoProp[key]['downloadurl720']:
                 log21.debug('video src for 720:',videoProp[key]['downloadurl720'])
@@ -227,28 +320,54 @@ def downloadVideo():
             else:
                 log21.info('no video files in 720p resolution for',videoProp[key]['id'])
 
-            # 1080p
-            p1080 = re.compile(r"video_alt_url2:\s*'((http|https)://85tube.com/get_file/[a-z0-9\/\_\.\?]+=[0-9]+)',")      
-            for script in soup.find_all("script", {"src":False}):
-                if script:            
-                    m1080 = p1080.search(script.string)
-                    if m1080 != None:
-                        videoProp[key]['downloadurl1080'] = m1080.group(1)
-                        videoProp[key]['videofilepath1080'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'_1080p.mp4')
-                        break
-            if 'downloadurl1080' in videoProp[key] and videoProp[key]['downloadurl1080']:
-                log21.debug('video src for 1080:',videoProp[key]['downloadurl1080'])
-                log21.info('do download video for ',videoProp[key]['id'],videoProp[key]['downloadurl1080'])
-                try:
-                    with requests.get(videoProp[key]['downloadurl1080'], stream=True) as r:
-                        with open(videoProp[key]['videofilepath1080'], 'wb') as f:
-                            shutil.copyfileobj(r.raw, f)
-                except requests.exceptions.RequestException as e:
-                    log21.error(e)
-            else:
-                log21.info('no video files in 1080p resolution for',videoProp[key]['id'])
+            # # 1080p
+            # p1080 = re.compile(r"video_alt_url2:\s*'((http|https)://85tube.com/get_file/[a-z0-9\/\_\.\?]+=[0-9]+)',")      
+            # for script in soup.find_all("script", {"src":False}):
+            #     if script:            
+            #         m1080 = p1080.search(script.string)
+            #         if m1080 != None:
+            #             videoProp[key]['downloadurl1080'] = m1080.group(1)
+            #             videoProp[key]['videofilepath1080'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'_1080p.mp4')
+            #             break
+            # if 'downloadurl1080' in videoProp[key] and videoProp[key]['downloadurl1080']:
+            #     log21.debug('video src for 1080:',videoProp[key]['downloadurl1080'])
+            #     log21.info('do download video for ',videoProp[key]['id'],videoProp[key]['downloadurl1080'])
+            #     try:
+            #         with requests.get(videoProp[key]['downloadurl1080'], stream=True) as r:
+            #             with open(videoProp[key]['videofilepath1080'], 'wb') as f:
+            #                 shutil.copyfileobj(r.raw, f)
+            #     except requests.exceptions.RequestException as e:
+            #         log21.error(e)
+            # else:
+            #     log21.info('no video files in 1080p resolution for',videoProp[key]['id'])
+        # else download 480p default
         else:
             log21.info('no video files HD resolution for',videoProp[key]['id'])
+            # download 480p default
+            p480 = re.compile(r"video_url:\s*'((http|https)://85tube.com/get_file/[a-z0-9\/\_\.\?]+=[0-9]+)',")
+            for script in soup.find_all("script", {"src":False}):
+                if script:            
+                    m480 = p480.search(script.string)
+                    if m480 != None:
+                        videoProp[key]['downloadurl480'] = m480.group(1)
+                        videoProp[key]['videofilepath480'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'.mp4')
+                        videoProp[key]['videofilepathsendapi'] = os.path.join(videoProp[key]['sourcepath'],videoProp[key]['id']+'.mp4')
+                        break
+            log21.debug('video src for 480p',videoProp[key]['downloadurl480'])
+            if videoProp[key]['downloadurl480'] == None:
+                log21.warning('cannot get video source for',videoProp[key]['href'])
+                log21.debug('cannot get video source: ',int(key+1),'/',len(videoProp.keys()))
+                continue   
+            log21.info('do download video for ',videoProp[key]['id'],videoProp[key]['downloadurl480'])
+            try:
+                with requests.get(videoProp[key]['downloadurl480'], stream=True) as r:
+                    with open(videoProp[key]['videofilepath480'], 'wb') as f:
+                        shutil.copyfileobj(r.raw, f)
+            except requests.exceptions.RequestException as e:
+                log21.error(e)
+                log21.debug('request to url error: ',int(key+1),'/',len(videoProp.keys()))
+                continue
+
         log21.debug('download videos success: ',int(key+1),'/',len(videoProp.keys()))
 
     return True
@@ -266,6 +385,7 @@ def getAllLinkPropertiesOnLatestPage():
         raise SystemExit(e)
     if response.status_code != 200:
         log21.error('site '+urlReg+' is not available')
+        removeLockFile()
         exit()
     log21.debug('site '+urlReg+' is 200OK')
     
@@ -306,6 +426,7 @@ def siteIsAvailable():
         raise SystemExit(e)
     if response.status_code != 200:
         log21.error('site '+siteUrl+' is not available')
+        removeLockFile()
         exit()
     log21.debug('site '+siteUrl+' is 200OK')
 

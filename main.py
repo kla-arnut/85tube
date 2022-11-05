@@ -156,6 +156,7 @@ def apiCall():
             continue
         if response.status_code != 200:
             log21.info('request to url error: ',response.status_code,int(key+1),'/',len(videoProp.keys()))
+            log21.debug(response)
             continue
         log21.info(response.text)
     return True

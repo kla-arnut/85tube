@@ -140,31 +140,30 @@ def apiCall():
     for key in videoProp.keys():
         videoUpdate = { 'id': str(videoProp[key]['id']), 
                         'title': str(videoProp[key]['title']), 
-                        'imgUrl': str(videoProp[key]['videoimagepath']), 
-                        'videoUrl': str(videoProp[key]['videofilepathsendapi']), 
-                        'demoUrl': str(videoProp[key]['videofilepreviewpath']), 
+                        'imgUrl': str(videoProp[key]['videoimagepath'].split('85tube/')[1]), 
+                        'videoUrl': str(videoProp[key]['videofilepathsendapi'].split('85tube/')[1]), 
+                        'demoUrl': str(videoProp[key]['videofilepreviewpath'].split('85tube/')[1]), 
                         'serverCode': str(serverCode), 
                         'videoType': str(2), # 2 is mp4, 1 is m3u8
                         'categoryId': str(videoProp[key]['categoriesid']), 
                         'tagIds': str(videoProp[key]['tags']), 
                         'playTime': str(videoProp[key]['duration'])}
         try:
-            log21.info('request update api to',apiUrl,'for',videoProp[key]['id'])
-            response = requests.post(apiUrl,data=json.dumps(videoUpdate), headers={'Content-Type': 'application/json;charset-UTF-8'})
+            response = requests.post(apiUrl+'/'+apiVideoUpdate,data=json.dumps(videoUpdate), headers={'Content-Type': 'application/json;charset-UTF-8'})
         except requests.exceptions.RequestException as e:
             log21.error(e)
             continue
         if response.status_code != 200:
-            log21.info('request to url error: ',response.status_code,int(key+1),'/',len(videoProp.keys()))
-            log21.debug(response)
+            log21.info('request to url error code: ',response.status_code,int(key+1),'/',len(videoProp.keys()))
+            log21.debug(response.json())
             continue
-        log21.info(response.text)
+        log21.info(response.json())
     return True
 
 def checkLockFile():
     log21.debug('check lock file')
     if os.path.exists(os.path.join(os.getcwd(), r'inprogress.lock')):
-        log21.info('this script is running, can run again after this task is finished')
+        log21.error('this script is running, can run again after this task is finished')
         exit()
 
 def createLockFile():

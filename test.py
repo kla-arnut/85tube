@@ -943,4 +943,10 @@ log21.info('video src for 1080:',url1080)
 
 
 
-print(random.randint(1,int("123")))
+str1 = '/srv/85tube/videos/72620/72620_720p.mp4'
+str2 = '/srv/85tube/videos/72620/72620_preview.mp4'
+str3 = '/srv/85tube/videos/72620/72620_image.jpg'
+
+print(str(str1.split('85tube/')[1]))
+print(str(str2.split('85tube/')[1]))
+print(str(str3.split('85tube/')[1]))

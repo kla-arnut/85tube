@@ -11,8 +11,8 @@ import configparser
 from collections import defaultdict
 import re
 import random
-
-
+import subprocess
+import shutil
 
 text = """
 
@@ -946,7 +946,12 @@ log21.info('video src for 1080:',url1080)
 str1 = '/srv/85tube/videos/72620/72620_720p.mp4'
 str2 = '/srv/85tube/videos/72620/72620_preview.mp4'
 str3 = '/srv/85tube/videos/72620/72620_image.jpg'
-
 print(str(str1.split('85tube/')[1]))
 print(str(str2.split('85tube/')[1]))
 print(str(str3.split('85tube/')[1]))
+
+
+try:
+   shutil.rmtree('/home/arnut/workspace/85tube/test1')
+except:
+   print('Error while deleting directory')

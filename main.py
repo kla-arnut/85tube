@@ -151,6 +151,9 @@ def getServerCode():
 
 def apiCall(index):
     log21.debug('api call for register new videos')
+    if videoProp[index]['isregister'] == False:
+        log21.info('video component id',videoProp[index]['id'],'is not valid. do not register',response.status_code,int(index+1),'/',len(videoProp.keys()))
+        return True
     videoUpdate = { 'id': str(videoProp[index]['id']), 
                     'title': str(videoProp[index]['title']), 
                     'imgUrl': str(videoProp[index]['videoimagepath'].split('85tube/')[1]), 
@@ -167,18 +170,22 @@ def apiCall(index):
         log21.error(e)
         shutil.rmtree(videoProp[index]['sourcepath'])
         log21.debug('removed path:',videoProp[index]['sourcepath'])
-        videoProp.pop(index, None)
-        log21.debug('removed videos id:',index)
+        videoProp[index]['isregister'] = False
+        log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
         return True
     if response.status_code != 200:
         log21.info('request to url error code: ',response.status_code,int(index+1),'/',len(videoProp.keys()))
-        log21.debug(response.json())
         shutil.rmtree(videoProp[index]['sourcepath'])
         log21.debug('removed path:',videoProp[index]['sourcepath'])
-        videoProp.pop(index, None)
-        log21.debug('removed videos id:',index)
+        videoProp[index]['isregister'] = False
+        log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
         return True
-    log21.info(response.json())
+    
+    try:
+        log21.info(response.json())
+    except ValueError:  # includes simplejson.decoder.JSONDecodeError
+        log21.info('Decoding JSON has failed')
+    
     return True
 
 def checkLockFile():
@@ -211,8 +218,8 @@ def downloadCoverImage(index):
         log21.error(e)
         shutil.rmtree(videoProp[index]['sourcepath'])
         log21.debug('removed path:',videoProp[index]['sourcepath'])
-        videoProp.pop(index, None)
-        log21.debug('removed videos id:',index)
+        videoProp[index]['isregister'] = False
+        log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
     log21.debug('download cover image success: ',int(index+1),'/',len(videoProp.keys()))
 
     return True
@@ -229,8 +236,8 @@ def downloadVideoPreview(index):
         log21.error(e)
         shutil.rmtree(videoProp[index]['sourcepath'])
         log21.debug('removed path:',videoProp[index]['sourcepath'])
-        videoProp.pop(index, None)
-        log21.debug('removed videos id:',index)
+        videoProp[index]['isregister'] = False
+        log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
     log21.debug('download video preview success: ',int(index+1),'/',len(videoProp.keys()))
                 
     return True
@@ -294,16 +301,16 @@ def downloadVideo(index):
         log21.debug('request to url error: ',int(index+1),'/',len(videoProp.keys()))
         shutil.rmtree(videoProp[index]['sourcepath'])
         log21.debug('removed path:',videoProp[index]['sourcepath'])
-        videoProp.pop(index, None)
-        log21.debug('removed videos id:',index)
+        videoProp[index]['isregister'] = False
+        log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
         return True
     if response.status_code != 200:
         log21.error('site',videoProp[index]['href'],' is not available')
         log21.debug('request to url error: ',response.status_code,int(index+1),'/',len(videoProp.keys()))
         shutil.rmtree(videoProp[index]['sourcepath'])
         log21.debug('removed path:',videoProp[index]['sourcepath'])
-        videoProp.pop(index, None)
-        log21.debug('removed videos id:',index)
+        videoProp[index]['isregister'] = False
+        log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
         return True
     log21.debug('site '+videoProp[index]['href']+' is 200OK')
     
@@ -353,8 +360,8 @@ def downloadVideo(index):
                 log21.error(e)
                 shutil.rmtree(videoProp[index]['sourcepath'])
                 log21.debug('removed path:',videoProp[index]['sourcepath'])
-                videoProp.pop(index, None)
-                log21.debug('removed videos id:',index)
+                videoProp[index]['isregister'] = False
+                log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
                 return True
         else:
             log21.info('no video files in 720p resolution for',videoProp[index]['id'])
@@ -379,8 +386,8 @@ def downloadVideo(index):
             #         log21.error(e)
             #           shutil.rmtree(videoProp[index]['sourcepath'])
             #           log21.debug('removed path:',videoProp[index]['sourcepath'])
-            #           videoProp.pop(index, None)
-            #           log21.debug('removed videos id:',index)
+            #           videoProp[index]['isregister'] = False
+            #           log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
             # else:
             #     log21.info('no video files in 1080p resolution for',videoProp[index]['id'])
     # else download 480p default
@@ -411,8 +418,8 @@ def downloadVideo(index):
             log21.debug('request to url error: ',int(index+1),'/',len(videoProp.keys()))
             shutil.rmtree(videoProp[index]['sourcepath'])
             log21.debug('removed path:',videoProp[index]['sourcepath'])
-            videoProp.pop(index, None)
-            log21.debug('removed videos id:',index)
+            videoProp[index]['isregister'] = False
+            log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
             return True
 
     log21.debug('download videos success: ',int(index+1),'/',len(videoProp.keys()))
@@ -452,6 +459,7 @@ def getAllLinkPropertiesOnRandomPage():
         videoProp[index]['videopreview'] = img['data-preview']
         videoProp[index]['hd'] = True if hd else False
         videoProp[index]['duration'] = duration.string
+        videoProp[index]['isregister'] = True
         log21.debug(
             "id:",videoProp[index]['id'],"\n"
             "href:",videoProp[index]['href'],"\n"

@@ -165,7 +165,7 @@ def apiCall(index):
                     'tagIds': str(videoProp[index]['tags']), 
                     'playTime': str(videoProp[index]['duration'])}
     try:
-        response = requests.post(apiUrl+'/'+apiVideoUpdate,data=json.dumps(videoUpdate), headers={'Content-Type': 'application/json;charset-UTF-8'})
+        response = requests.post(apiUrl+'/'+apiVideoUpdate,data=json.dumps(videoUpdate), headers={'Content-Type': 'application/json;charset-UTF-8'}, timeout=15)
     except requests.exceptions.RequestException as e:
         log21.error(e)
         shutil.rmtree(videoProp[index]['sourcepath'])

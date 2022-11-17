@@ -3,9 +3,10 @@
 this project only run on linux and run on python virtual env
 
 1. cd {to-your-project-path}
-2. source python3.10-venv/bin/activate
-3. pip install -r requirements.txt
-4. python main.py
+2. python3.10 -m venv python3.10-venv
+3. source python3.10-venv/bin/activate
+4. pip install -r requirements.txt
+5. python main.py
    
 
 test call api on server script

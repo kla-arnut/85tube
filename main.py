@@ -94,6 +94,10 @@ def removeCategoriesFile():
 
 def mappingCategories(index):
     log21.debug('mapping categories')
+    
+    videoProp[index]['categoriesid'] = apiCategoriesIDDefault # default other
+    log21.info('default categories id for',videoProp[index]['id'],'is 其他 (',videoProp[index]['categoriesid'],')')
+
     # first time, it call api for get all categories form server , and write to file
     if not os.path.exists(os.path.join(os.getcwd(), r'categoriesFromServerAPI.json')): 
         try:
@@ -104,11 +108,15 @@ def mappingCategories(index):
         if listCatFromAPI.status_code != 200:
             log21.error('site',apiUrl+'/'+apiGetCategory,' is not available')
             log21.debug('request to url error: ',listCatFromAPI.status_code)
-        listCatFromAPI = listCatFromAPI.json()
-        with open(os.path.join(os.getcwd(), r'categoriesFromServerAPI.json'), "w") as outFile:
-            jsonObject = json.dumps(listCatFromAPI, indent=4)
-            outFile.write(jsonObject)
-            log21.debug('write file:',os.path.join(os.getcwd(), r'categoriesFromServerAPI.json'))
+        try:
+            listCatFromAPI = listCatFromAPI.json()
+        except ValueError:  # includes simplejson.decoder.JSONDecodeError
+            log21.warning('Decoding JSON from',apiUrl+'/'+apiGetCategory,'has failed')
+        if 'success' in listCatFromAPI and listCatFromAPI['success'] == True:
+            with open(os.path.join(os.getcwd(), r'categoriesFromServerAPI.json'), "w") as outFile:
+                jsonObject = json.dumps(listCatFromAPI, indent=4)
+                outFile.write(jsonObject)
+                log21.debug('write file:',os.path.join(os.getcwd(), r'categoriesFromServerAPI.json'))
 
     # second time, it read content form json file
     if os.path.exists(os.path.join(os.getcwd(), r'categoriesFromServerAPI.json')):
@@ -116,8 +124,6 @@ def mappingCategories(index):
             listCatFromAPI = json.load(openFile)
         listCat = listCatFromAPI['result']
         log21.info('list all categories get from api service is:',[category['title'] for category in listCat])
-        videoProp[index]['categoriesid'] = apiCategoriesIDDefault # default other
-        log21.info('default categories id for',videoProp[index]['id'],'is 其他 (',videoProp[index]['categoriesid'],')')
         breaker = False
         for cat in videoProp[index]['categories']:
             for apiCat in listCat:

@@ -11,3 +11,4 @@ this project only run on linux and run on python virtual env
 
 test call api on server script
 curl -H "Content-Type : application/json;charset-UTF-8" -X POST http://globalrc.crossrobots.cn/api/open/syn/video/getCategory
+curl -H "Content-Type : application/json;charset-UTF-8" -X POST http://globalrc.crossrobots.cn/api/open/syn/video/serverList

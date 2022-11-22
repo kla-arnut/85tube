@@ -37,7 +37,7 @@ apiGetServerList = config['DEFAULT']['apiGetServerList']
 apiVideoUpdate =  config['DEFAULT']['apiVideoUpdate']
 apiGetCategory = config['DEFAULT']['apiGetCategory']
 apiCategoriesIDDefault = config['DEFAULT']['apiCategoriesIDDefault']
-serverCode = 'global'
+serverCode = 'globalvideo1'
 
 def startProcess():
     
@@ -179,7 +179,7 @@ def getServerCode():
         return True
     log21.debug('site',apiUrl,'/',apiGetServerList,' is 200OK')
     response = response.json()
-    if response['success'] == True:
+    if 'success' in response and response['success'] == True:
         serverCode = response['result'][0]['serverCode']
         log21.info('api response servercode is:',serverCode)
     return True

@@ -12,6 +12,7 @@ import re
 import random
 from pathlib import Path
 import json
+import ffmpeg
 
 # set log level
 log21.basicConfig(level=log21.DEBUG)
@@ -81,10 +82,37 @@ def operationWorker():
     log21.debug('all operation worker')
     for index in videoProp.keys():
         downloadVideo(index)
+        convertTom3u8(index,videoProp[index]['videofilepathsendapi'],'videoFull')
         downloadVideoPreview(index)
+        convertTom3u8(index,videoProp[index]['videofilepreviewpath'],'videoPreview')
         downloadCoverImage(index)
         mappingCategories(index)
         apiCall(index)
+
+def convertTom3u8(index,videoPath,videoType):
+    log21.debug('convert to m3u8',videoPath)
+    if not os.path.exists(videoPath): 
+        log21.warning('not found file',videoPath)
+        shutil.rmtree(videoProp[index]['sourcepath'])
+        log21.debug('removed path:',videoProp[index]['sourcepath'])
+        videoProp[index]['isregister'] = False
+        log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
+        return True
+    videoName = os.path.basename(os.path.splitext(videoPath)[0])
+    m3u8File = os.path.join(videoProp[index]['sourcepath'],videoName+'.m3u8')
+    log21.debug('original video MP4 file:',videoPath)
+    log21.debug('original video name:',videoName)
+    log21.info('M3U8 output file:',m3u8File)
+    inputFile = ffmpeg.input(videoPath, f='mp4')
+    outputFile = ffmpeg.output(inputFile, m3u8File, format='hls', start_number=0, hls_time=5, hls_list_size=0)
+    ffmpeg.run(outputFile)
+
+    if videoType == 'videoFull':
+        videoProp[index]['videopathm3u8sendapi'] = m3u8File
+    else:
+        videoProp[index]['videopreviewpathm3u8sendapi'] = m3u8File
+
+    return True
 
 def removeCategoriesFile():
     log21.debug('remove categories file get from api server')
@@ -122,18 +150,19 @@ def mappingCategories(index):
     if os.path.exists(os.path.join(os.getcwd(), r'categoriesFromServerAPI.json')):
         with open(os.path.join(os.getcwd(), r'categoriesFromServerAPI.json'), 'r') as openFile:
             listCatFromAPI = json.load(openFile)
-        listCat = listCatFromAPI['result']
-        log21.info('list all categories get from api service is:',[category['title'] for category in listCat])
-        breaker = False
-        for cat in videoProp[index]['categories']:
-            for apiCat in listCat:
-                if cat == apiCat['title']:
-                    videoProp[index]['categoriesid'] = str(apiCat['id'])
-                    log21.info('new match categories id for',videoProp[index]['id'],'is',apiCat['title'],'(',videoProp[index]['categoriesid'],')')
-                    breaker = True
+        if 'result' in listCatFromAPI:
+            listCat = listCatFromAPI['result']
+            log21.info('list all categories get from api service is:',[category['title'] for category in listCat])
+            breaker = False
+            for cat in videoProp[index]['categories']:
+                for apiCat in listCat:
+                    if cat == apiCat['title']:
+                        videoProp[index]['categoriesid'] = str(apiCat['id'])
+                        log21.info('new match categories id for',videoProp[index]['id'],'is',apiCat['title'],'(',videoProp[index]['categoriesid'],')')
+                        breaker = True
+                        break
+                if breaker == True:
                     break
-            if breaker == True:
-                break
     return True
 
 def getServerCode():
@@ -163,13 +192,14 @@ def apiCall(index):
     videoUpdate = { 'id': str(videoProp[index]['id']), 
                     'title': str(videoProp[index]['title']), 
                     'imgUrl': str(videoProp[index]['videoimagepath'].split('85tube/')[1]), 
-                    'videoUrl': str(videoProp[index]['videofilepathsendapi'].split('85tube/')[1]), 
-                    'demoUrl': str(videoProp[index]['videofilepreviewpath'].split('85tube/')[1]), 
+                    'videoUrl': str(videoProp[index]['videopathm3u8sendapi'].split('85tube/')[1]), 
+                    'demoUrl': str(videoProp[index]['videopreviewpathm3u8sendapi'].split('85tube/')[1]), 
                     'serverCode': str(serverCode), 
-                    'videoType': str(2), # 2 is mp4, 1 is m3u8
+                    'videoType': str(1), # 2 is mp4, 1 is m3u8
                     'categoryId': str(videoProp[index]['categoriesid']), 
                     'tagIds': str(videoProp[index]['tags']), 
                     'playTime': str(videoProp[index]['duration'])}
+    log21.debug('data request to update video',videoUpdate)
     try:
         response = requests.post(apiUrl+'/'+apiVideoUpdate,data=json.dumps(videoUpdate), headers={'Content-Type': 'application/json;charset-UTF-8'}, timeout=15)
     except requests.exceptions.RequestException as e:
@@ -251,8 +281,8 @@ def downloadVideoPreview(index):
 def checkVideoIsExists():
     log21.debug('check video is exists')
     for key in list(videoProp.keys()):
-        if os.path.exists(os.path.join(videosPath, videoProp[key]['id'])) and os.path.exists(os.path.join(videosPath, videoProp[key]['id'],videoProp[key]['id'] + '.mp4')):
-            log21.info('video is exists: ' + videosPath + '/' +videoProp[key]['id'] + '/' + videoProp[key]['id'] + '.mp4')
+        if os.path.exists(os.path.join(videosPath, videoProp[key]['id'])) and (os.path.exists(os.path.join(videosPath, videoProp[key]['id'],videoProp[key]['id'] + '_720p.mp4')) or os.path.exists(os.path.join(videosPath, videoProp[key]['id'],videoProp[key]['id'] + '_480p.mp4'))):
+            log21.info('video is exists: ' + videosPath + '/' +videoProp[key]['id'] + '/' + videoProp[key]['id'])
             videoProp.pop(key, None)
     if len(videoProp) == 0:
         log21.info('no video files to download')
@@ -406,8 +436,8 @@ def downloadVideo(index):
                 m480 = p480.search(script.string)
                 if m480 != None:
                     videoProp[index]['downloadurl480'] = m480.group(1)
-                    videoProp[index]['videofilepath480'] = os.path.join(videoProp[index]['sourcepath'],videoProp[index]['id']+'.mp4')
-                    videoProp[index]['videofilepathsendapi'] = os.path.join(videoProp[index]['sourcepath'],videoProp[index]['id']+'.mp4')
+                    videoProp[index]['videofilepath480'] = os.path.join(videoProp[index]['sourcepath'],videoProp[index]['id']+'_480p.mp4')
+                    videoProp[index]['videofilepathsendapi'] = os.path.join(videoProp[index]['sourcepath'],videoProp[index]['id']+'_480p.mp4')
                     break
         log21.debug('video src for 480p',videoProp[index]['downloadurl480'])
         if videoProp[index]['downloadurl480'] == None:

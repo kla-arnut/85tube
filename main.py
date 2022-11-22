@@ -104,7 +104,7 @@ def convertTom3u8(index,videoPath,videoType):
     log21.debug('original video name:',videoName)
     log21.info('M3U8 output file:',m3u8File)
     inputFile = ffmpeg.input(videoPath, f='mp4')
-    outputFile = ffmpeg.output(inputFile, m3u8File, format='hls', start_number=0, hls_time=5, hls_list_size=0)
+    outputFile = ffmpeg.output(inputFile, m3u8File, format='hls', start_number=0, hls_time=10, hls_list_size=0)
     ffmpeg.run(outputFile)
 
     if videoType == 'videoFull':

@@ -1,12 +1,11 @@
 import ffmpeg
 from os import path
 import os
-import requests
 
 videosPath = os.path.join(os.getcwd(), r'videos')
 print('video path root:',videosPath)
 allDir = [ f.path for f in os.scandir(videosPath) if f.is_dir() ]
-print('all video path:',"\n","\n".join(allDir))
+#print('all video path:',"\n","\n".join(allDir))
 print()
 
 count = 1

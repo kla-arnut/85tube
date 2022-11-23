@@ -37,7 +37,7 @@ apiGetServerList = config['DEFAULT']['apiGetServerList']
 apiVideoUpdate =  config['DEFAULT']['apiVideoUpdate']
 apiGetCategory = config['DEFAULT']['apiGetCategory']
 apiCategoriesIDDefault = config['DEFAULT']['apiCategoriesIDDefault']
-serverCode = 'globalvideo1'
+serverCode = 'h_fc1'
 
 def startProcess():
     

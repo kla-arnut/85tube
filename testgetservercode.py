@@ -22,6 +22,7 @@ apiGetCategory = config['DEFAULT']['apiGetCategory']
 apiCategoriesIDDefault = config['DEFAULT']['apiCategoriesIDDefault']
 serverCode = 'abc'
 
+log21.info('servercode is',serverCode)
 try:
     response = requests.post(apiUrl+'/'+apiGetServerList)
 except requests.exceptions.RequestException as e:

@@ -5,7 +5,6 @@ from os import path
 import log21
 import configparser
 from collections import defaultdict
-import json
 
 log21.basicConfig(level=log21.DEBUG)
 

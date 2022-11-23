@@ -21,7 +21,7 @@ apiGetServerList = config['DEFAULT']['apiGetServerList']
 apiVideoUpdate =  config['DEFAULT']['apiVideoUpdate']
 apiGetCategory = config['DEFAULT']['apiGetCategory']
 apiCategoriesIDDefault = config['DEFAULT']['apiCategoriesIDDefault']
-serverCode = 'h_fc1'
+serverCode = 'abc'
 
 try:
     response = requests.post(apiUrl+'/'+apiGetServerList)

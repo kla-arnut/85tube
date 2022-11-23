@@ -3,14 +3,9 @@ import requests
 from bs4 import BeautifulSoup as bs
 from os import path
 import log21
-import shutil
 import configparser
 from collections import defaultdict
-import re
-import random
-from pathlib import Path
 import json
-import ffmpeg
 
 log21.basicConfig(level=log21.DEBUG)
 

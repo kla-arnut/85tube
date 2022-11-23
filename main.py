@@ -189,9 +189,9 @@ def apiCall(index):
         return True
     videoUpdate = { 'id': str(videoProp[index]['id']), 
                     'title': str(videoProp[index]['title']), 
-                    'imgUrl': str(videoProp[index]['videoimagepath'].split('85tube/')[1]), 
-                    'videoUrl': str(videoProp[index]['videopathm3u8sendapi'].split('85tube/')[1]), 
-                    'demoUrl': str(videoProp[index]['videopreviewpathm3u8sendapi'].split('85tube/')[1]), 
+                    'imgUrl': str(videoProp[index]['videoimagepath'].split('85tube')[1]), 
+                    'videoUrl': str(videoProp[index]['videopathm3u8sendapi'].split('85tube')[1]), 
+                    'demoUrl': str(videoProp[index]['videopreviewpathm3u8sendapi'].split('85tube')[1]), 
                     'serverCode': str(serverCode), 
                     'videoType': str(1), # 2 is mp4, 1 is m3u8
                     'categoryId': str(videoProp[index]['categoriesid']), 

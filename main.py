@@ -1,6 +1,4 @@
-#from inspect import isframe
 import os
-#from xmlrpc.client import FastMarshaller
 import requests
 from bs4 import BeautifulSoup as bs
 from os import path

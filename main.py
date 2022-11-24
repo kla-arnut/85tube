@@ -35,7 +35,7 @@ apiGetServerList = config['DEFAULT']['apiGetServerList']
 apiVideoUpdate =  config['DEFAULT']['apiVideoUpdate']
 apiGetCategory = config['DEFAULT']['apiGetCategory']
 apiCategoriesIDDefault = config['DEFAULT']['apiCategoriesIDDefault']
-serverCode = 'h_fc1'
+serverCode = 'globalvideo2'
 
 def startProcess():
     
@@ -61,7 +61,8 @@ def startProcess():
     checkVideoIsExists()
 
     # get server code()
-    getServerCode()
+    # do not get serverCode, because it already has a default value
+    # getServerCode()
 
     # downloadvideo, videopreview, imagecover, mappingcategories, apiregistercall
     operationWorker()

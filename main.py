@@ -28,14 +28,15 @@ config.read('config.ini')
 siteUrl = config['DEFAULT']['siteUrl']
 siteUrlLastedUpdate = config['DEFAULT']['siteUrlLastedUpdate']
 allPageCount = config['DEFAULT']['allPageCount']
-videosPath = os.path.join(os.getcwd(), r'videos')
+#videosPath = os.path.join(os.getcwd(), r'videos')
+videosPath = config['DEFAULT']['videosPath']
 videoProp = defaultdict(dict)
 apiUrl = config['DEFAULT']['apiUrl']
 apiGetServerList = config['DEFAULT']['apiGetServerList']
 apiVideoUpdate =  config['DEFAULT']['apiVideoUpdate']
 apiGetCategory = config['DEFAULT']['apiGetCategory']
 apiCategoriesIDDefault = config['DEFAULT']['apiCategoriesIDDefault']
-serverCode = 'globalvideo2'
+serverCode = config['DEFAULT']['serverCode']
 
 def startProcess():
     
@@ -88,21 +89,21 @@ def operationWorker():
         mappingCategories(index)
         apiCall(index)
 
-def convertTom3u8(index,videoPath,videoType):
-    log21.debug('convert to m3u8',videoPath)
-    if not os.path.exists(videoPath): 
-        log21.warning('not found file',videoPath)
+def convertTom3u8(index,videoMP4Path,videoType):
+    log21.debug('convert to m3u8',videoMP4Path)
+    if not os.path.exists(videoMP4Path): 
+        log21.warning('not found file',videoMP4Path)
         shutil.rmtree(videoProp[index]['sourcepath'])
         log21.debug('removed path:',videoProp[index]['sourcepath'])
         videoProp[index]['isregister'] = False
         log21.debug('removed video id:',index,'(',videoProp[index]['id'],')')
         return True
-    videoName = os.path.basename(os.path.splitext(videoPath)[0])
+    videoName = os.path.basename(os.path.splitext(videoMP4Path)[0])
     m3u8File = os.path.join(videoProp[index]['sourcepath'],videoName+'.m3u8')
-    log21.debug('original video MP4 file:',videoPath)
+    log21.debug('original video MP4 file:',videoMP4Path)
     log21.debug('original video name:',videoName)
     log21.info('M3U8 output file:',m3u8File)
-    inputFile = ffmpeg.input(videoPath, f='mp4')
+    inputFile = ffmpeg.input(videoMP4Path, f='mp4')
     outputFile = ffmpeg.output(inputFile, m3u8File, format='hls', start_number=0, hls_time=10, hls_list_size=0)
     ffmpeg.run(outputFile)
 
@@ -190,9 +191,9 @@ def apiCall(index):
         return True
     videoUpdate = { 'id': str(videoProp[index]['id']), 
                     'title': str(videoProp[index]['title']), 
-                    'imgUrl': str(videoProp[index]['videoimagepath'].split('85tube')[1]), 
-                    'videoUrl': str(videoProp[index]['videopathm3u8sendapi'].split('85tube')[1]), 
-                    'demoUrl': str(videoProp[index]['videopreviewpathm3u8sendapi'].split('85tube')[1]), 
+                    'imgUrl': str(videoProp[index]['videoimagepath'].split('globalv2.lyfdc.com.cn')[1]), 
+                    'videoUrl': str(videoProp[index]['videopathm3u8sendapi'].split('globalv2.lyfdc.com.cn')[1]), 
+                    'demoUrl': str(videoProp[index]['videopreviewpathm3u8sendapi'].split('globalv2.lyfdc.com.cn')[1]), 
                     'serverCode': str(serverCode), 
                     'videoType': str(1), # 2 is mp4, 1 is m3u8
                     'categoryId': str(videoProp[index]['categoriesid']), 
@@ -409,6 +410,7 @@ def downloadVideo(index):
             #         if m1080 != None:
             #             videoProp[index]['downloadurl1080'] = m1080.group(1)
             #             videoProp[index]['videofilepath1080'] = os.path.join(videoProp[index]['sourcepath'],videoProp[index]['id']+'_1080p.mp4')
+            #             videoProp[index]['videofilepathsendapi'] = os.path.join(videoProp[index]['sourcepath'],videoProp[index]['id']+'_1080p.mp4')
             #             break
             # if 'downloadurl1080' in videoProp[index] and videoProp[index]['downloadurl1080']:
             #     log21.debug('video src for 1080:',videoProp[index]['downloadurl1080'])
